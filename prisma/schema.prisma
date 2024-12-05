@@ -1,0 +1,112 @@
+generator client {  
+  provider = "prisma-client-js"  
+}  
+
+datasource db {  
+  provider = "mysql"  
+  url      = env("DATABASE_URL")  
+}  
+
+model Marca {  
+  id           Int          @id @default(autoincrement())  
+  nome         String       @db.VarChar(30)  
+  computadores Computador[]  
+  @@map("marcas")  
+}  
+
+model Computador {  
+  id          Int         @id @default(autoincrement())  
+  modelo      String      @db.VarChar(60)
+  preco       Decimal     @db.Decimal(10, 2)  
+  especificacoes String?  
+  tipo        TipoComputador @default(DESKTOP)  
+  destaque    Boolean      @default(true)  
+  foto        String   
+  createdAt   DateTime     @default(now())  
+  updatedAt   DateTime     @updatedAt  
+  marca       Marca        @relation(fields: [marcaId], references: [id])  
+  marcaId     Int  
+  fotos       Foto[]  
+  propostas   Proposta[]  
+  @@map("computadores")  
+}  
+
+model Foto {  
+  id            Int         @id @default(autoincrement())  
+  descricao     String      @db.VarChar(30)  
+  codigoFoto    String      @db.LongText  
+  computador    Computador  @relation(fields: [computadorId], references: [id])  
+  computadorId  Int  
+  @@map("fotos")  
+}  
+
+model Cliente {  
+  id                          String     @id @default(uuid()) @db.VarChar(36)  
+  nome                        String     @db.VarChar(60)  
+  email                       String     @db.VarChar(60) @unique  
+  senha                       String     @db.VarChar(60)  
+  telefone                    String?    @db.VarChar(15)    // Novo campo opcional  
+  ativo                       Boolean    @default(true)      // Novo campo para status do cliente  
+  resetToken                  String?   @db.VarChar(64)  
+  resetTokenExpiresAt         DateTime? 
+  createdAt                   DateTime   @default(now())  
+  updatedAt                   DateTime   @updatedAt  
+  
+  propostas    Proposta[]
+  orcamentos   Orcamento[]  
+  @@map("clientes")  
+}  
+
+model Orcamento {
+  id          Int               @id @default(autoincrement())
+  cliente     Cliente           @relation(fields: [clienteId], references: [id])
+  clienteId   String
+  status      String            @default("PENDENTE") @db.VarChar(60)
+  acabamento  String            @db.VarChar(60)
+  ambiente    String            @db.VarChar(60)
+  faixaPreco  String            @db.VarChar(120)
+  observacoes String            @db.VarChar(255)
+  prazo       String            @db.VarChar(255)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("orcamentos")
+}
+
+
+model Proposta {  
+  id            Int           @id @default(autoincrement())  
+  cliente       Cliente       @relation(fields: [clienteId], references: [id])  
+  clienteId     String        @db.VarChar(36)  
+  computador    Computador    @relation(fields: [computadorId], references: [id])  
+  computadorId  Int  
+  descricao     String        @db.VarChar(255)  
+  resposta      String?       @db.VarChar(255)  
+  status        StatusProposta @default(PENDENTE)  // Novo campo enum  
+  createdAt     DateTime      @default(now())  
+  updatedAt     DateTime      @updatedAt  
+  @@map("propostas")  
+}  
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(60)
+  email        String   @db.VarChar(60) @unique
+  senha        String   @db.VarChar(60)   // senha deve ser varchar(60)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt  
+  @@map("admins")
+}
+
+enum TipoComputador {  
+  DESKTOP  
+  NOTEBOOK  
+  LAPTOP  
+}  
+
+enum StatusProposta {  
+  PENDENTE  
+  APROVADA  
+  REJEITADA  
+  CANCELADA  
+}
